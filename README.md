@@ -1,1 +1,14 @@
 # master
+provider "azurerm"{
+    features {}
+    client_id = "32a57033-36cb-4f8f-8024-2c9bea778571"
+    tenant_id = "d47bf3e1-31ff-4215-8688-08625752da4a"
+    subscription_id = "f2dc1e10-d9d1-446d-82c0-51af79116e6f"
+ 
+}
+ 
+resource "azurerm_resource_group" "rg1" {
+    name = "hyd1239898"
+    location = "East US"
+ 
+}
