@@ -1,0 +1,171 @@
+##############################
+###### with Keyvault name ######
+################################
+
+$keyVaultName = "testrgkvq1"
+
+Connect-AzAccount -Identity
+
+$allSecrets = Get-AzKeyVaultSecret -VaultName $keyVaultName
+
+foreach ($secret in $allSecrets) {
+    $secretObj = Get-AzKeyVaultSecret -VaultName $keyVaultName -Name $secret.Name
+    $secretValue   = $secretObj.SecretValueText
+    $expiryDate    = $secretObj.Attributes.Expires
+    $secretVersion = $secretObj.Id.Split('/')[-1]
+
+    Write-Host "Secret Name   : $($secretObj.Name)"
+    Write-Host "Secret Value  : $secretValue"
+    Write-Host "Expiry Date   : $expiryDate"
+    Write-Host "Secret Version: $secretVersion"
+    Write-Host "Name-Value Pair: $($secretObj.Name) = $secretValue"
+    Write-Host "-------------------------------"
+}
+
+######################
+#### Code with SP##### 
+######################
+
+$tenantId     = $(tenantId)
+$appId        = $(appId)
+$spSecret     = $(spSecret)
+$keyVaultName = $(keyVaultName)
+
+$securePassword = ConvertTo-SecureString $spSecret -AsPlainText -Force
+$creds = New-Object System.Management.Automation.PSCredential($appId, $securePassword)
+
+Connect-AzAccount -ServicePrincipal -Tenant $tenantId -Credential $creds
+
+$allSecrets = Get-AzKeyVaultSecret -VaultName $keyVaultName
+
+foreach ($secret in $allSecrets) {
+    $secretObj = Get-AzKeyVaultSecret -VaultName $keyVaultName -Name $secret.Name
+    $secretValue   = $secretObj.SecretValueText
+    $expiryDate    = $secretObj.Attributes.Expires
+    $secretVersion = $secretObj.Id.Split('/')[-1]
+
+    Write-Host "Secret Name   : $($secretObj.Name)"
+    Write-Host "Secret Value  : $secretValue"
+    Write-Host "Expiry Date   : $expiryDate"
+    Write-Host "Secret Version: $secretVersion"
+    Write-Host "-------------------------------"
+======================================================================================================}
+#####################################
+######## No Expire ##################
+###################################
+
+
+$tenantId     = "94ccc355-dc16-4c5e-bfba-3b218f2e91c5"
+$appId        = "4e90e05a-267d-4e86-814f-fe8d4cc01261"
+$spSecret     = "f6S8Q~LHiLDiqSE7K3kQH.ShVSdBJPSyS.4pwcsc"
+$vaultName    = "testrgkvq1"
+$outputCsv    = "KeyVaultSecrets.csv"
+
+$securePassword = ConvertTo-SecureString $spSecret -AsPlainText -Force
+$creds = New-Object System.Management.Automation.PSCredential($appId, $securePassword)
+Connect-AzAccount -ServicePrincipal -Tenant $tenantId -Credential $creds
+$allSecretRefs = Get-AzKeyVaultSecret -VaultName $vaultName
+$allSecrets = @()
+ 
+foreach ($secretRef in $allSecretRefs) {
+    try {
+        $secretVersions = Get-AzKeyVaultSecret -VaultName $vaultName -Name $secretRef.Name -IncludeVersions
+         foreach ($sv in $secretVersions) {
+            try {
+                $secretObj = Get-AzKeyVaultSecret -VaultName $vaultName -Name $sv.Name -Version $sv.Version
+                $secretValue = Get-AzKeyVaultSecret -VaultName $vaultName -Name $sv.Name -Version $sv.Version -AsPlainText
+                 $expiresValue = if ($secretObj.Attributes.Expires) { $secretObj.Attributes.Expires } else { "No Expiry" }
+ 
+                $allSecrets += [PSCustomObject]@{
+                    SecretName    = $secretObj.Name
+                    SecretValue   = $secretValue
+                    SecretVersion = $secretObj.Version
+                    ContentType   = $secretObj.ContentType
+                    Enabled       = $secretObj.Attributes.Enabled
+                    Expires       = $expiresValue
+                    NotBefore     = $secretObj.Attributes.NotBefore
+                    Created       = $secretObj.Attributes.Created
+                    Updated       = $secretObj.Attributes.Updated
+                    RecoveryLevel = $secretObj.Attributes.RecoveryLevel
+                    VaultName     = $secretObj.VaultName
+                    Id            = $secretObj.Id
+                }
+            }
+
+            catch {
+
+                Write-Host "Failed to fetch secret version $($sv.Version). Error: $_" -ForegroundColor Red
+            }
+        }
+    }
+    catch {
+
+        Write-Host "Failed to fetch secret: $($secretRef.Name). Error: $_" -ForegroundColor Red
+    }
+}
+ $allSecrets | Format-Table SecretName, SecretVersion, SecretValue, ContentType, Enabled, Expires, NotBefore, Created, Updated, RecoveryLevel, VaultName, Id -AutoSize
+$allSecrets | Export-Csv -Path $outputCsv -NoTypeInformation -Encoding UTF8
+Write-Host "All secrets exported to CSV: $outputCsv" -ForegroundColor Green
+=========================================================================================================================
+ #########################################
+#### to save in local ######################
+###########################################
+
+$tenantId     = "94ccc355-dc16-4c5e-bfba-3b218f2e91c5"
+$appId        = "4e90e05a-267d-4e86-814f-fe8d4cc01261"
+$spSecret     = "f6S8Q~LHiLDiqSE7K3kQH.ShVSdBJPSyS.4pwcsc"
+$vaultName    = "testrgkvq1"
+$outputCsv    = "C:\Users\saimu\Downloads/KeyVaultSecrets.csv"
+ 
+$securePassword = ConvertTo-SecureString $spSecret -AsPlainText -Force
+$creds = New-Object System.Management.Automation.PSCredential($appId, $securePassword)
+Connect-AzAccount -ServicePrincipal -Tenant $tenantId -Credential $creds
+$allSecretRefs = Get-AzKeyVaultSecret -VaultName $vaultName
+$allSecrets = @()
+ 
+foreach ($secretRef in $allSecretRefs) {
+
+    try {
+
+        $secretVersions = Get-AzKeyVaultSecret -VaultName $vaultName -Name $secretRef.Name -IncludeVersions
+ 
+        foreach ($sv in $secretVersions) {
+
+            try {
+
+                $secretObj = Get-AzKeyVaultSecret -VaultName $vaultName -Name $sv.Name -Version $sv.Version
+                $secretValue = Get-AzKeyVaultSecret -VaultName $vaultName -Name $sv.Name -Version $sv.Version -AsPlainText
+                $expiresValue = if ($secretObj.Attributes.Expires) { $secretObj.Attributes.Expires } else { "No Expiry" }
+                $allSecrets += [PSCustomObject]@{
+
+                    SecretName    = $secretObj.Name
+                    SecretValue   = $secretValue
+                    SecretVersion = $secretObj.Version
+                    ContentType   = $secretObj.ContentType
+                    Enabled       = $secretObj.Attributes.Enabled
+                    Expires       = $expiresValue
+                    NotBefore     = $secretObj.Attributes.NotBefore
+                    Created       = $secretObj.Attributes.Created
+                    Updated       = $secretObj.Attributes.Updated
+                    RecoveryLevel = $secretObj.Attributes.RecoveryLevel
+                    VaultName     = $secretObj.VaultName
+                    Id            = $secretObj.Id
+                }
+            }
+
+            catch {
+
+                Write-Host "Failed to fetch secret version $($sv.Version). Error: $_" -ForegroundColor Red
+            }
+        }
+    }
+    catch {
+
+        Write-Host "Failed to fetch secret: $($secretRef.Name). Error: $_" -ForegroundColor Red
+    }
+}
+$allSecrets | Format-Table SecretName, SecretVersion, SecretValue, ContentType, Enabled, Expires, NotBefore, Created, Updated, RecoveryLevel, VaultName, Id -AutoSize
+$allSecrets | Export-Csv -Path $outputCsv -NoTypeInformation -Encoding UTF8
+Write-Host "All secrets exported to CSV: $outputCsv" -ForegroundColor Green
+
+ 
